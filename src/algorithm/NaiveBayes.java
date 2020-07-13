@@ -3,7 +3,6 @@ package algorithm;
 import java.io.FileReader;
 import java.util.Arrays;
 
-import common.*;
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -17,7 +16,7 @@ import weka.core.Instances;
  * Southwest Petroleum University, Chengdu 610500, China.<br>
  * Project: The Bayes project.
  * <p>
- * Progress: The very beginning.<br>
+ * Progress: Almost done.<br>
  * Written time: April 4, 2020. <br>
  * Last modify time: April 4, 2020.
  */
@@ -191,6 +190,49 @@ public class NaiveBayes {
 	/**
 	 ********************
 	 * Calculate the conditional probabilities with Laplacian smooth.
+	 * ONLY scan the dataset once
+	 ********************
+	 */
+	public void calculateConditionalProbabilities2() {
+		conditionalProbabilities = new double[numClasses][numConditions][];
+		conditionalProbabilitiesLaplacian = new double[numClasses][numConditions][];
+		
+		//Allocate space
+		for (int i = 0; i < numClasses; i ++) {
+			for (int j = 0; j < numConditions; j ++) {
+				int tempNumValues = (int) data.attribute(j).numValues();
+				conditionalProbabilities[i][j] = new double[tempNumValues];
+				conditionalProbabilitiesLaplacian[i][j] = new double[tempNumValues];
+			}//Of for j
+		}//Of for i
+
+		//Count the numbers
+		int[] tempClassCounts = new int[numClasses];
+		for (int i = 0; i < numInstances; i ++) {
+			int tempClass = (int) data.instance(i).classValue();
+			tempClassCounts[tempClass] ++;
+			for (int j = 0; j < numConditions; j ++) {
+				int tempValue = (int) data.instance(i).value(j);
+				conditionalProbabilities[tempClass][j][tempValue] ++;
+			}//Of for j
+		}//Of for i
+		
+		// Now for the real probability with Laplacian
+		for (int i = 0; i < numClasses; i ++) {
+			for (int j = 0; j < numConditions; j ++) {
+				int tempNumValues = (int) data.attribute(j).numValues();
+				for (int k = 0; k < tempNumValues; k ++) {
+					conditionalProbabilitiesLaplacian[i][j][k] = (conditionalProbabilities[i][j][k]
+							+ 1) / (tempClassCounts[i] + numClasses);
+				}//Of for k
+			}//Of for j
+		}//Of for i
+
+		System.out.println(Arrays.deepToString(conditionalProbabilities));
+	}// Of calculateConditionalProbabilities2	
+	/**
+	 ********************
+	 * Calculate the conditional probabilities with Laplacian smooth.
 	 ********************
 	 */
 	public void calculateGausssianParameters() {
@@ -229,7 +271,7 @@ public class NaiveBayes {
 				gaussianParameters[i][j] = new GaussianParamters(tempMu, tempSigma);
 			} // Of for j
 		} // Of for i
-		
+
 		System.out.println(Arrays.deepToString(gaussianParameters));
 	}// Of calculateGausssianParameters
 
@@ -351,7 +393,7 @@ public class NaiveBayes {
 		NaiveBayes tempLearner = new NaiveBayes(tempFilename);
 		tempLearner.setDataType(NOMINAL);
 		tempLearner.calculateClassDistribution();
-		tempLearner.calculateConditionalProbabilities();
+		tempLearner.calculateConditionalProbabilities2();
 		tempLearner.classify();
 
 		System.out.println("The accuracy is: " + tempLearner.computeAccuracy());
@@ -365,11 +407,11 @@ public class NaiveBayes {
 	public static void testNumerical() {
 		System.out.println(
 				"Hello, Naive Bayes. I only want to test the numerical data with Gaussian assumption.");
-		//String tempFilename = "src/data/iris.arff";
-		//String tempFilename = "src/data/r15.arff";
+		// String tempFilename = "src/data/iris.arff";
+		// String tempFilename = "src/data/r15.arff";
 		// String tempFilename = "src/data/banana.arff";
 		String tempFilename = "src/data/wdbc_norm_ex.arff";
-		
+
 		NaiveBayes tempLearner = new NaiveBayes(tempFilename);
 		tempLearner.setDataType(NUMERICAL);
 		tempLearner.calculateClassDistribution();
@@ -390,7 +432,7 @@ public class NaiveBayes {
 	 */
 	public static void main(String[] args) {
 		//testNominal();
-		 testNumerical();
+		testNumerical();
 	}// Of main
 
 	/**
@@ -406,9 +448,9 @@ public class NaiveBayes {
 			mu = paraMu;
 			sigma = paraSigma;
 		}// Of the constructor
-		
-		public String toString(){
+
+		public String toString() {
 			return "(" + mu + ", " + sigma + ")";
-		}//Of toString
+		}// Of toString
 	}// Of GaussianParamters
 }// Of class NaiveBayes
